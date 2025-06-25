@@ -1,0 +1,16 @@
+# BUILD STUFF #
+###############
+bin
+*.dll
+*.exe
+build
+*.o
+
+# EXTERNAL LIBRARIES #
+######################
+lib
+lib\SDL3
+
+*\stb_image.h
+
+.vscode
