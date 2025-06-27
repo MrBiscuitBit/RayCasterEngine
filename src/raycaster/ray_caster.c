@@ -149,8 +149,8 @@ void input_player(rc_player_t *player, const bool *key_state){
 
     if(key_state[SDL_SCANCODE_RIGHT]) player->turn_right = 1;
     if(key_state[SDL_SCANCODE_LEFT]) player->turn_left = -1;
-    if(key_state[SDL_SCANCODE_UP]) player->walk_forward = 1;
-    if(key_state[SDL_SCANCODE_DOWN]) player->walk_backward = -1;
+    if(key_state[SDL_SCANCODE_W]) player->walk_forward = 1;
+    if(key_state[SDL_SCANCODE_S]) player->walk_backward = -1;
 }
 
 void move_player(rc_player_t *player, rc_board_t *board, float delta_time){
@@ -259,24 +259,6 @@ void rc_clean_board(rc_board_t *rc_board){
     }
 }
 
-void rc_clean_renderer(rc_renderer_t *ren){
-    if(!ren) return;
-
-    if(ren->color_buffer){
-        free(ren->color_buffer);
-        ren->color_buffer = NULL;
-    }
-
-    if(ren->color_buffer_texture){
-        SDL_DestroyTexture(ren->color_buffer_texture);
-    }
-
-    if(ren->wall_textures){
-        free_wall_textures(ren->wall_textures);
-        ren->wall_textures = NULL;
-    }
-}
-
 void rc_clean_up(raycaster_t *rc){  
     if(!rc) return;
 
@@ -294,11 +276,6 @@ void rc_clean_up(raycaster_t *rc){
     if(rc->rays){
         free(rc->rays);
         rc->rays = NULL;
-    }
-
-    if(rc->ren){
-        rc_clean_renderer(rc->ren);
-        rc->ren = NULL;
     }
 }
 

@@ -1,21 +1,4 @@
-#include "rc_render.h"
-
-int init_sdl_win(int wnd_width, int wnd_height, SDL_Window **win, SDL_Renderer **ren, int fullscreen){
-
-    if(!SDL_Init(SDL_INIT_VIDEO)){
-        fprintf(stderr, "Failed To Initialize SDL");
-        return 1;
-    }
-
-    if(!SDL_CreateWindowAndRenderer("RayCaster", wnd_width, wnd_height, fullscreen? SDL_WINDOW_FULLSCREEN: 0, win, ren)){
-        fprintf(stderr, "Failed To Create SDL Window And Renderer");
-        SDL_Quit();
-        return 2;
-    }
-    SDL_SetRenderDrawBlendMode(*ren, SDL_BLENDMODE_BLEND);
-
-    return 0;
-}
+#include "ray_caster.h"
 
 void process_events(int *running){
 
@@ -53,9 +36,7 @@ void cap_frame_rate(Uint64 frame_start){
 int main(int argc, char *argv[]){
     puts("Hello RayCaster!");
 
-    SDL_Window *win = NULL;
-    SDL_Renderer *ren = NULL;
-    if(init_sdl_win(WND_WIDTH, WND_HEIGHT, &win, &ren, 1)){
+    if(init_sdl_win(WND_WIDTH, WND_HEIGHT)){
         fprintf(stderr, "Failed To Init SDL And Window/Renderer\n");
         return 1;
     }
@@ -63,9 +44,7 @@ int main(int argc, char *argv[]){
     raycaster_t *ray_caster = malloc(sizeof(raycaster_t));
     if(!ray_caster){
         fprintf(stderr, "Failed To Allocate RayCaster\n");
-        SDL_DestroyRenderer(ren);
-        SDL_DestroyWindow(win);
-        SDL_Quit();
+        clean_sdl();
         return 1;
     }
 
@@ -98,12 +77,10 @@ int main(int argc, char *argv[]){
     ray_caster->dist_to_proj = (ray_caster->res.x * 0.5f) / tan(ray_caster->fov * 0.5f);
 
     ray_caster->rays = malloc(sizeof(ray_t) * ray_caster->ray_count);
+    ray_caster->wall_textures = load_wall_textures();
 
-    // Allocate Color Buffer And Create Texture For It
-    ray_caster->ren = malloc(sizeof(rc_renderer_t));
-    ray_caster->ren->color_buffer = (Uint32 *)malloc(sizeof(Uint32) * (Uint32)ray_caster->res.x * (Uint32)ray_caster->res.y);
-    ray_caster->ren->color_buffer_texture = SDL_CreateTexture(ren, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STREAMING, ray_caster->res.x, ray_caster->res.y);
-    ray_caster->ren->wall_textures = load_wall_textures();
+    // Init Color Buffer
+    init_buffer(ray_caster->res.x, ray_caster->res.y);
 
     float delta_time; // Frame Time In Seconds
     Uint64 prev_time, current_time;
@@ -128,18 +105,13 @@ int main(int argc, char *argv[]){
         rc_update(ray_caster, delta_time);
 
         // Rendering
-        SDL_SetRenderDrawColorFloat(ren, CLR_WHITE);
-        SDL_RenderClear(ren);
-
-        rc_render_all(ren, ray_caster, 0.2f, 0, 0, 0, 1);
-
-        SDL_RenderPresent(ren);
+        rc_render_all(ray_caster, 0.2f, 0, 0, 0, 1);
 
         cap_frame_rate(current_time);
     }
 
-    SDL_DestroyRenderer(ren);
-    SDL_DestroyWindow(win);
-    SDL_Quit();
+    rc_clean_up(ray_caster);
+    clean_buffer();
+    clean_sdl();
     return 0;
 }

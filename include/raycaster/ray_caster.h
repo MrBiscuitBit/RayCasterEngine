@@ -1,7 +1,7 @@
 #pragma once
 
+#include "render.h"
 #include "textures.h"
-#include "SDL3/SDL.h"
 
 #define PI 3.14159265
 #define TWO_PI 6.28318530
@@ -47,12 +47,6 @@ struct Ray{
     int collision_data; // The Value In The Collided Wall
 };
 
-struct RC_Renderer{
-    uint32_t *color_buffer;
-    SDL_Texture *color_buffer_texture;
-    texture_t *wall_textures;
-};
-
 struct RayCaster{
     rc_board_t *board;
     rc_player_t *player;
@@ -62,6 +56,7 @@ struct RayCaster{
     float fov;
     rc_renderer_t *ren;
     vec2i_t res;
+    texture_t *wall_textures;
 };
 
 int map_has_wall_at(rc_board_t *board, float x, float y);
@@ -74,3 +69,8 @@ void rc_clean_board(rc_board_t *rc_board);
 void rc_clean_up(raycaster_t *rc);
 void rc_update(raycaster_t *rc, float delta_time);
 void input_player(rc_player_t *player, const bool *key_state);
+void rc_render_map(rc_board_t *board, float scale_factor);
+void rc_render_player(SDL_Renderer *ren, rc_player_t *player, float scale_factor);
+void rc_render_rays(SDL_Renderer *ren, raycaster_t *rc, float scale_factor);
+void rc_prepare_wall_projection(raycaster_t *rc);
+void rc_render_all(raycaster_t *rc, float scale_factor, int ren_map, int ren_player, int ren_rays, int ren_proj);

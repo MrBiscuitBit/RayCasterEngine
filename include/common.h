@@ -9,8 +9,8 @@
 #define FPS 60
 #define FRAME_TIME (1000 / FPS)
 
-#define WND_WIDTH 320
-#define WND_HEIGHT 240
+#define WND_WIDTH 1920
+#define WND_HEIGHT 1200
 
 #define CLR_BLACK        0.0f, 0.0f, 0.0f, 1.0f
 #define CLR_WHITE        1.0f, 1.0f, 1.0f, 1.0f
@@ -32,3 +32,12 @@
 #define CLR_LIGHT_GRAY   0.75f, 0.75f, 0.75f, 1.0f
 
 #define CLR_TRANSPARENT  0.0f, 0.0f, 0.0f, 0.0f
+
+typedef int8_t   i8;
+typedef int16_t  i16;
+typedef int32_t  i32;
+typedef int64_t  i64;
+typedef uint8_t  u8;
+typedef uint16_t u16;
+typedef uint32_t u32;
+typedef uint64_t u64;
