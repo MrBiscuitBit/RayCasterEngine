@@ -1,17 +1,47 @@
 #include "ray_caster.h"
 
-int map_has_wall_at(rc_board_t *board, float x, float y){
-    if(!board || !board->map) return -1;
-    if(x < 0 || x > board->dimensions.x || y < 0 || y > board->dimensions.y) return 1;
-    int map_index_x = floor(x / board->cell_size);
-    int map_index_y = floor(y / board->cell_size);
-    return board->map[map_index_y][map_index_x];
+raycaster_t *init_raycaster(int res_width, int res_height){
+
+    raycaster_t *ray_caster = malloc(sizeof(raycaster_t));
+    if(!ray_caster){
+        fprintf(stderr, "Failed To Allocate RayCaster\n");
+        return NULL;
+    }
+
+    ray_caster->board = rc_load_board("resrcs\\boards\\default_board.txt", 64);
+    if(!ray_caster->board){
+        fprintf(stderr, "Failed To Load Board\n");
+    }
+
+    ray_caster->player = rc_init_player(ray_caster->board->dimensions.x * 0.5f, ray_caster->board->dimensions.y * 0.5f);
+    if(!ray_caster->player){
+        fprintf(stderr, "Failed To Init Player\n");
+    }
+
+    // NoteWorthy Resolutions Are 320x240 And 1440x900
+    ray_caster->res = (vec2i_t){res_width, res_height};
+    ray_caster->fov = 75 * (PI / 180);
+    ray_caster->ray_count = ray_caster->res.x;
+    ray_caster->dist_to_proj = (ray_caster->res.x * 0.5f) / tan(ray_caster->fov * 0.5f);
+
+    ray_caster->rays = malloc(sizeof(ray_t) * ray_caster->ray_count);
+    if(!ray_caster->rays){
+        rc_clean_up(ray_caster);
+        return NULL;
+    }
+    ray_caster->wall_textures = load_wall_textures();
+
+    // Init Color Buffer
+    init_buffer(ray_caster->res.x, ray_caster->res.y);
+    
+    return ray_caster;
 }
 
-void cast_ray(raycaster_t *rc, float ray_angle, int col_id){
+void rc_cast_ray(raycaster_t *rc, float ray_angle, int col_id){
     if(!rc) return;
 
-    ray_angle = normalize_angle(ray_angle);
+    int dof = 0, dof_max = 24;
+    ray_angle = rc_normalize_angle(ray_angle);
 
     float tan_a = tan(ray_angle); // Tangent of Ray Angle
 
@@ -49,24 +79,27 @@ void cast_ray(raycaster_t *rc, float ray_angle, int col_id){
     float next_horz_hit_x = x_intercept;
     float next_horz_hit_y = y_intercept;
 
-    while(next_horz_hit_x > 0 && next_horz_hit_x < rc->board->dimensions.x && next_horz_hit_y > 0 && next_horz_hit_y < rc->board->dimensions.y){
+    while(dof < dof_max){
         float x_to_check = next_horz_hit_x;
         float y_to_check = next_horz_hit_y + (facing_up? -1: 0);
 
-        int map_data = map_has_wall_at(rc->board, x_to_check, y_to_check);
-        if(map_data != 0){
+        int map_data = rc_map_has_wall_at(rc->board, x_to_check, y_to_check);
+        if(map_data < 0) dof = dof_max;
+        else if(map_data != 0){
             horz_hit_x = next_horz_hit_x;
             horz_hit_y = next_horz_hit_y;
             horz_wall_data = map_data;
             horz_wall_hit = 1;
-            break;
+            dof = dof_max;
         }
         else{
             next_horz_hit_x += x_step;
             next_horz_hit_y += y_step;
+            dof++;
         }
     }
 
+    dof = 0;
     // VERTICAL RAY/WALL INTERSECTION
 
     int vert_wall_hit = 0; // Boolean value
@@ -92,21 +125,23 @@ void cast_ray(raycaster_t *rc, float ray_angle, int col_id){
     float next_vert_hit_x = x_intercept;
     float next_vert_hit_y = y_intercept;
 
-    while(next_vert_hit_x > 0 && next_vert_hit_x < rc->board->dimensions.x && next_vert_hit_y > 0 && next_vert_hit_y < rc->board->dimensions.y){
+    while(dof < dof_max){
         float x_to_check = next_vert_hit_x + (facing_left? -1: 0);
         float y_to_check = next_vert_hit_y;
 
-        int map_data = map_has_wall_at(rc->board, x_to_check, y_to_check);
-        if(map_data != 0){
+        int map_data = rc_map_has_wall_at(rc->board, x_to_check, y_to_check);
+        if(map_data < 0) dof = dof_max;
+        else if(map_data != 0){
             vert_hit_x = next_vert_hit_x;
             vert_hit_y = next_vert_hit_y;
             vert_wall_data = map_data;
             vert_wall_hit = 1;
-            break;
+            dof = dof_max;
         }
         else{
             next_vert_hit_x += x_step;
             next_vert_hit_y += y_step;
+            dof++;
         }
     }
 
@@ -130,133 +165,18 @@ void cast_ray(raycaster_t *rc, float ray_angle, int col_id){
     rc->rays[col_id].angle = ray_angle;
 }
 
-void cast_all_rays(raycaster_t *rc){
+void rc_cast_all_rays(raycaster_t *rc){
     if(!rc) return;
     for(int col_id = 0; col_id < rc->ray_count; col_id++){
         float ray_angle = rc->player->angle + atan(((col_id - rc->ray_count * 0.5f) / rc->dist_to_proj));
-        cast_ray(rc, ray_angle, col_id);
+        rc_cast_ray(rc, ray_angle, col_id);
     }
 }
 
-float normalize_angle(float angle){
+float rc_normalize_angle(float angle){
     angle = fmod(angle, TWO_PI);
     if(angle < 0) angle += TWO_PI;
     return angle;
-}
-
-void input_player(rc_player_t *player, const bool *key_state){
-    if(!player || !key_state) return;
-
-    if(key_state[SDL_SCANCODE_RIGHT]) player->turn_right = 1;
-    if(key_state[SDL_SCANCODE_LEFT]) player->turn_left = -1;
-    if(key_state[SDL_SCANCODE_W]) player->walk_forward = 1;
-    if(key_state[SDL_SCANCODE_S]) player->walk_backward = -1;
-}
-
-void move_player(rc_player_t *player, rc_board_t *board, float delta_time){
-
-    int turn_dir = player->turn_right + player->turn_left;
-    player->angle += turn_dir * player->turn_speed * delta_time;
-
-    int walk_dir = player->walk_forward + player->walk_backward;
-    float move_step = walk_dir * player->walk_speed * delta_time;
-
-    float new_player_x = player->pos.x + cos(player->angle) * move_step;
-    float new_player_y = player->pos.y + sin(player->angle) * move_step;
-
-    if(!map_has_wall_at(board, new_player_x, new_player_y)){ 
-        player->pos.x = new_player_x;
-        player->pos.y = new_player_y;
-    }
-
-    player->turn_left = 0;
-    player->turn_right = 0;
-    player->walk_forward = 0;
-    player->walk_backward = 0;
-}
-
-int is_line_empty(const char *line){
-    while(*line){
-        if(!isspace(*line)) return 0;
-        line++;
-    }
-    return 1;
-}
-
-rc_board_t *rc_load_board(const char *board_path, int cell_size){
-    if(!board_path){
-        fprintf(stderr, "Missing Board Path In Function: RC Load Board");
-        return NULL;
-    }
-    FILE *board_file = fopen(board_path, "r");
-    if(!board_file){
-        fprintf(stderr, "Failed To Open Board Path In Function: RC Load Board");
-        return NULL;
-    }
-
-    int columns, rows;
-    fscanf(board_file, "{%d, %d}", &columns, &rows);  
-    
-    rc_board_t *new_board = malloc(sizeof(rc_board_t));
-    if(!new_board){
-        fprintf(stderr, "Failed To Allocate New Board In Function: RC Load Board");
-        fclose(board_file);
-        return NULL;
-    }
-    new_board->map = malloc(sizeof(int*) * rows);
-    if(!new_board->map){
-        fprintf(stderr, "Failed To Allocate New Board Rows In Function: RC Load Board");
-        free(new_board);
-        fclose(board_file);
-        return NULL;
-    }
-
-    int buffer_size = 512;
-    char line[buffer_size];
-    for(int i = 0; i < rows; i++){
-        // Allocate Row Columns
-        new_board->map[i] = malloc(sizeof(int) * columns);
-        if(!new_board->map[i]){
-            fprintf(stderr, "Failed To Allocate New Board Columns (Row: %d) In Function: RC Load Board", i);
-            rc_clean_board(new_board);
-            free(new_board);
-            fclose(board_file);
-            return NULL;
-        }
-        // Fill Row Columns From File
-        fgets(line, buffer_size, board_file);
-        if(is_line_empty(line)){
-            i--;
-            continue;
-        }
-
-        char *token = strtok(line, ",\n");
-        for(int j = 0; j < columns && token != NULL; j++){
-            new_board->map[i][j] = atoi(token);
-            token = strtok(NULL, ",\n");
-        }
-    }
-
-    new_board->cell_size = cell_size;
-    new_board->cols = columns;
-    new_board->rows = rows;
-    new_board->dimensions.x = new_board->cols * new_board->cell_size;
-    new_board->dimensions.y = new_board->rows * new_board->cell_size;
-
-    fclose(board_file);
-    return new_board;
-}
-
-void rc_clean_board(rc_board_t *rc_board){
-    if(!rc_board) return;
-    if(rc_board->map != NULL){
-        for(int i = 0; i < rc_board->rows; i++){
-            if(rc_board->map[i])
-                free(rc_board->map[i]);
-        }
-        free(rc_board->map);
-        rc_board->map = NULL;
-    }
 }
 
 void rc_clean_up(raycaster_t *rc){  
@@ -281,6 +201,6 @@ void rc_clean_up(raycaster_t *rc){
 
 void rc_update(raycaster_t *rc, float delta_time){
     if(!rc) return;
-    move_player(rc->player, rc->board, delta_time);
-    cast_all_rays(rc);
+    rc_move_player(rc->player, rc->board, delta_time);
+    rc_cast_all_rays(rc);
 }

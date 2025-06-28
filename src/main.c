@@ -40,52 +40,22 @@ int main(int argc, char *argv[]){
         fprintf(stderr, "Failed To Init SDL And Window/Renderer\n");
         return 1;
     }
-    
-    raycaster_t *ray_caster = malloc(sizeof(raycaster_t));
+        
+    // NoteWorthy Resolutions Are 320x240 And 1440x900
+    raycaster_t *ray_caster = init_raycaster(1440, 900);
     if(!ray_caster){
-        fprintf(stderr, "Failed To Allocate RayCaster\n");
+        fprintf(stderr, "Failed To Init RayCaster\n");
+        clean_buffer();
         clean_sdl();
         return 1;
     }
-
-    ray_caster->board = rc_load_board("resrcs\\boards\\default_board.txt", 64);
-    if(!ray_caster->board){
-        fprintf(stderr, "Failed To Load Board\n");
-    }
-
-    ray_caster->player = malloc(sizeof(rc_player_t));
-    if(!ray_caster->player){
-        fprintf(stderr, "Failed To Allocate Player\n");
-        rc_clean_up(ray_caster);
-    }
-
-    ray_caster->player->pos.x = ray_caster->board->dimensions.x * 0.5f;
-    ray_caster->player->pos.y = ray_caster->board->dimensions.y * 0.5f;
-    ray_caster->player->width = ray_caster->player->height = 5;
-    ray_caster->player->angle = PI * 0.5f;
-    ray_caster->player->turn_right = 0; 
-    ray_caster->player->turn_right = 0;
-    ray_caster->player->walk_forward = 0;
-    ray_caster->player->walk_backward = 0;
-    ray_caster->player->walk_speed = 100;
-    ray_caster->player->turn_speed = 75 * (PI / 180);
-
-    // NoteWorthy Resolutions Are 320x240 And 1440x900
-    ray_caster->res = (vec2i_t){1440, 900};
-    ray_caster->fov = 75 * (PI / 180);
-    ray_caster->ray_count = ray_caster->res.x;
-    ray_caster->dist_to_proj = (ray_caster->res.x * 0.5f) / tan(ray_caster->fov * 0.5f);
-
-    ray_caster->rays = malloc(sizeof(ray_t) * ray_caster->ray_count);
-    ray_caster->wall_textures = load_wall_textures();
-
-    // Init Color Buffer
-    init_buffer(ray_caster->res.x, ray_caster->res.y);
 
     float delta_time; // Frame Time In Seconds
     Uint64 prev_time, current_time;
     prev_time = SDL_GetTicks();
     const bool *key_state = NULL;
+
+    float map_scale_factor = 0.25;
 
     int running = 1;
     while(running == 1){
@@ -99,14 +69,21 @@ int main(int argc, char *argv[]){
 
         // Events/Input
         process_events(&running);
-        input_player(ray_caster->player, key_state);
+        rc_input_player(ray_caster->player, key_state);
 
         //Updating
         rc_update(ray_caster, delta_time);
 
         // Rendering
-        rc_render_all(ray_caster, 0.2f, 0, 0, 0, 1);
+        clear_color_buffer(0xFFFFFFFF);
 
+        rc_prepare_wall_projection(ray_caster);
+        rc_render_map(ray_caster->board, map_scale_factor);
+        //rc_render_rays(ray_caster, map_scale_factor);
+        rc_render_player(ray_caster->player, map_scale_factor);
+
+        render_color_buffer();
+        
         cap_frame_rate(current_time);
     }
 

@@ -1,9 +1,9 @@
 #include "render.h"
 
-SDL_Window *window = NULL;
-SDL_Renderer *renderer = NULL;
+static SDL_Window *window = NULL;
+static SDL_Renderer *renderer = NULL;
 
-struct buffer{
+static struct buffer{
     u32 *color_buffer;
     SDL_Texture *color_buffer_texture;
     int width, height;
@@ -80,15 +80,35 @@ void render_pixel(int x, int y, u32 color){
         sdl_buffer.color_buffer[(sdl_buffer.width * y) + x] = color; 
 }
 
+void render_line(int x0, int y0, int x1, int y1, u32 color){
+    int delta_x = x1 - x0;
+    int delta_y = y1 - y0;
+
+    int side_length = abs(delta_x) >= abs(delta_y)? abs(delta_x): abs(delta_y);
+
+    float x_step = delta_x / (float)side_length;
+    float y_step = delta_y / (float)side_length;
+
+    float current_x = x0;
+    float current_y = y0;
+    for(int i = 0; i < side_length; i++){
+        render_pixel(round(current_x), round(current_y), color);
+        current_x += x_step;
+        current_y += y_step;
+    }
+}
+
 void render_rect(int x, int y, int width, int height, u32 color){
     for(int i = y; i < y + height; i++){
         for(int j = x; j < x + width; j++){
-            render_pixel(x, y, color);
+            if(j < 0 || j > sdl_buffer.width) continue;
+            if(i < 0 || i > sdl_buffer.height) continue;
+            render_pixel(j, i, color);
         }
     }
 }
 
-void clear_color_buffer(uint32_t clear_color){
+void clear_color_buffer(u32 clear_color){
     for(int x = 0; x < sdl_buffer.width * sdl_buffer.height; x++){
             sdl_buffer.color_buffer[x] = clear_color;
     }

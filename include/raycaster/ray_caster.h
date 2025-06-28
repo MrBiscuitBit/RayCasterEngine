@@ -59,18 +59,19 @@ struct RayCaster{
     texture_t *wall_textures;
 };
 
-int map_has_wall_at(rc_board_t *board, float x, float y);
-void cast_ray(raycaster_t *rc, float ray_angle, int col_id);
-void cast_all_rays(raycaster_t *rc);
-float normalize_angle(float angle);
-void move_player(rc_player_t *player, rc_board_t *board, float delta_time);
+rc_player_t *rc_init_player(float pos_x, float pos_y);
 rc_board_t *rc_load_board(const char *board_path, int cell_size);
+raycaster_t *init_raycaster(int res_width, int res_height);
+float rc_normalize_angle(float angle);
+int rc_map_has_wall_at(rc_board_t *board, float x, float y);
+void rc_cast_ray(raycaster_t *rc, float ray_angle, int col_id);
+void rc_cast_all_rays(raycaster_t *rc);
+void rc_move_player(rc_player_t *player, rc_board_t *board, float delta_time);
 void rc_clean_board(rc_board_t *rc_board);
 void rc_clean_up(raycaster_t *rc);
 void rc_update(raycaster_t *rc, float delta_time);
-void input_player(rc_player_t *player, const bool *key_state);
+void rc_input_player(rc_player_t *player, const bool *key_state);
 void rc_render_map(rc_board_t *board, float scale_factor);
-void rc_render_player(SDL_Renderer *ren, rc_player_t *player, float scale_factor);
-void rc_render_rays(SDL_Renderer *ren, raycaster_t *rc, float scale_factor);
+void rc_render_player(rc_player_t *player, float scale_factor);
+void rc_render_rays(raycaster_t *rc, float scale_factor);
 void rc_prepare_wall_projection(raycaster_t *rc);
-void rc_render_all(raycaster_t *rc, float scale_factor, int ren_map, int ren_player, int ren_rays, int ren_proj);

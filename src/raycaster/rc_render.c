@@ -6,6 +6,7 @@ void rc_render_map(rc_board_t *board, float scale_factor){
         SDL_SetRenderDrawColorFloat(ren, CLR_LOGL);
         SDL_RenderFillRect(ren, &map_bg);
     */
+    int cell_size = board->cell_size * scale_factor;
     for(int i = 0; i < board->rows; i++){
         for(int j = 0; j < board->cols; j++){
             int tile_x = j * board->cell_size * scale_factor;
@@ -16,13 +17,13 @@ void rc_render_map(rc_board_t *board, float scale_factor){
                 SDL_RenderFillRect(ren, &tile_rect);
             */
             u32 color = (board->map[i][j] != 0)? 0xFFFFFFFF: 0xFF000000;
-            int cell_size = board->cell_size * scale_factor - 1;
             render_rect(tile_x, tile_y, cell_size, cell_size, color);
         }
     }
 }
 
-void rc_render_player(SDL_Renderer *ren, rc_player_t *player, float scale_factor){
+void rc_render_player(rc_player_t *player, float scale_factor){
+    /*
     SDL_SetRenderDrawColorFloat(ren, CLR_YELLOW);
     SDL_FRect player_rect = {
         player->pos.x * scale_factor,
@@ -41,17 +42,33 @@ void rc_render_player(SDL_Renderer *ren, rc_player_t *player, float scale_factor
         player->pos.x * scale_factor + cos(player->angle) * 30 * scale_factor, 
         player->pos.y * scale_factor + sin(player->angle) * 30 * scale_factor
     );
+    */
+
+    float player_x = player->pos.x - (player->width * 0.5f);
+    float player_y = player->pos.y - (player->height * 0.5f);
+    render_rect(
+        player_x * scale_factor,
+        player_y * scale_factor,
+        player->width * scale_factor,
+        player->height * scale_factor,
+        0xFF00FFFF);
+    render_line(
+        player->pos.x * scale_factor, 
+        player->pos.y * scale_factor,
+        player->pos.x * scale_factor + cos(player->angle) * 50 * scale_factor, 
+        player->pos.y * scale_factor + sin(player->angle) * 50 * scale_factor,
+        0xFF00FFFF
+    );
 }
 
-void rc_render_rays(SDL_Renderer *ren, raycaster_t *rc, float scale_factor){
-    SDL_SetRenderDrawColorFloat(ren, CLR_RED);
+void rc_render_rays(raycaster_t *rc, float scale_factor){
     for(int i = 0; i < rc->ray_count; i++){
-        SDL_RenderLine(
-            ren,
+        render_line(
             rc->player->pos.x * scale_factor,
             rc->player->pos.y * scale_factor,
             rc->rays[i].hit_x * scale_factor,
-            rc->rays[i].hit_y * scale_factor
+            rc->rays[i].hit_y * scale_factor,
+            0xFF0000FF
         );
     }
 }
@@ -95,14 +112,4 @@ void rc_prepare_wall_projection(raycaster_t *rc){
         }
     }
 
-}
-
-void rc_render_all(raycaster_t *rc, float scale_factor, int ren_map, int ren_player, int ren_rays, int ren_proj){
-    if(!rc) return;
-
-    clear_color_buffer(0xFFFFFFFF);
-    if(ren_proj) rc_prepare_wall_projection(rc);
-    render_color_buffer();
-
-    if(ren_map) rc_render_map(rc->board, scale_factor);
 }
