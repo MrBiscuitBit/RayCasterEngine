@@ -74,7 +74,7 @@ rc_board_t *rc_load_board(const char *board_path, int cell_size){
 
 int rc_map_has_wall_at(rc_board_t *board, float x, float y){
     if(!board || !board->map) return -2;
-    if(x < 0 || x > board->dimensions.x || y < 0 || y > board->dimensions.y) return -1;
+    if(x < 0 || x >= board->dimensions.x || y < 0 || y >= board->dimensions.y) return -1;
     int map_index_x = floor(x / board->cell_size);
     int map_index_y = floor(y / board->cell_size);
     return board->map[map_index_y][map_index_x];
@@ -89,5 +89,29 @@ void rc_clean_board(rc_board_t *rc_board){
         }
         free(rc_board->map);
         rc_board->map = NULL;
+    }
+}
+
+void rc_render_map_tiles(rc_board_t *board, float scale_factor){
+    int cell_size = board->cell_size * scale_factor;
+    for(int i = 0; i < board->rows; i++){
+        for(int j = 0; j < board->cols; j++){
+            int tile_x = j * board->cell_size * scale_factor;
+            int tile_y = i * board->cell_size * scale_factor;
+            u32 color = (board->map[i][j] != 0)? 0xFFFFFFFF: 0xFF000000;
+            render_rect(tile_x, tile_y, cell_size, cell_size, color);
+        }
+    }
+}
+
+void rc_render_map_rays(raycaster_t *rc, float scale_factor){
+    for(int i = 0; i < rc->ray_count; i++){
+        render_line(
+            rc->player->pos.x * scale_factor,
+            rc->player->pos.y * scale_factor,
+            rc->rays[i].hit_x * scale_factor,
+            rc->rays[i].hit_y * scale_factor,
+            0xFF0000FF
+        );
     }
 }

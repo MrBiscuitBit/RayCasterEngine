@@ -12,26 +12,26 @@
 #define WND_WIDTH 1920
 #define WND_HEIGHT 1200
 
-#define CLR_BLACK        0.0f, 0.0f, 0.0f, 1.0f
-#define CLR_WHITE        1.0f, 1.0f, 1.0f, 1.0f
-#define CLR_RED          1.0f, 0.0f, 0.0f, 1.0f
-#define CLR_GREEN        0.0f, 1.0f, 0.0f, 1.0f
-#define CLR_BLUE         0.0f, 0.0f, 1.0f, 1.0f
+#define HEX_BLACK        0xFF000000  
+#define HEX_WHITE        0xFFFFFFFF  
+#define HEX_RED          0xFF0000FF  
+#define HEX_GREEN        0xFF00FF00  
+#define HEX_BLUE         0xFFFF0000  
 
-#define CLR_YELLOW       1.0f, 1.0f, 0.0f, 1.0f
-#define CLR_CYAN         0.0f, 1.0f, 1.0f, 1.0f
-#define CLR_MAGENTA      1.0f, 0.0f, 1.0f, 1.0f
-#define CLR_LOGL         0.2f, 0.3f, 0.3f, 1.0f
+#define HEX_YELLOW       0xFF00FFFF  
+#define HEX_CYAN         0xFFFFFF00  
+#define HEX_MAGENTA      0xFFFF00FF  
+#define HEX_LOG_L        0xFF4D4D33   
 
-#define CLR_DARK_RED     0.5f, 0.0f, 0.0f, 1.0f
-#define CLR_DARK_GREEN   0.0f, 0.5f, 0.0f, 1.0f
-#define CLR_DARK_BLUE    0.0f, 0.0f, 0.5f, 1.0f
+#define HEX_DARK_RED     0xFF000080  
+#define HEX_DARK_GREEN   0xFF008000  
+#define HEX_DARK_BLUE    0xFF800000  
 
-#define CLR_GRAY         0.5f, 0.5f, 0.5f, 1.0f
-#define CLR_DARK_GRAY    0.25f, 0.25f, 0.25f, 1.0f
-#define CLR_LIGHT_GRAY   0.75f, 0.75f, 0.75f, 1.0f
+#define HEX_GRAY         0xFF808080  
+#define HEX_DARK_GRAY    0xFF404040  
+#define HEX_LIGHT_GRAY   0xFFBFBFBF  
 
-#define CLR_TRANSPARENT  0.0f, 0.0f, 0.0f, 0.0f
+#define HEX_ALPHA_KEY    0xFFFF00FF  
 
 typedef int8_t   i8;
 typedef int16_t  i16;

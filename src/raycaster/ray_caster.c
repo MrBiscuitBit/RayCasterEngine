@@ -13,7 +13,7 @@ raycaster_t *init_raycaster(int res_width, int res_height){
         fprintf(stderr, "Failed To Load Board\n");
     }
 
-    ray_caster->player = rc_init_player(ray_caster->board->dimensions.x * 0.5f, ray_caster->board->dimensions.y * 0.5f);
+    ray_caster->player = rc_init_player(640, ray_caster->board->dimensions.y * 0.5f);
     if(!ray_caster->player){
         fprintf(stderr, "Failed To Init Player\n");
     }
@@ -29,11 +29,12 @@ raycaster_t *init_raycaster(int res_width, int res_height){
         rc_clean_up(ray_caster);
         return NULL;
     }
-    ray_caster->wall_textures = load_wall_textures();
 
-    // Init Color Buffer
+    // Init Render Stuff
+    ray_caster->textures = load_textures(&ray_caster->texture_count);
+    ray_caster->sprites = init_sprites();
     init_buffer(ray_caster->res.x, ray_caster->res.y);
-    
+
     return ray_caster;
 }
 
@@ -41,7 +42,7 @@ void rc_cast_ray(raycaster_t *rc, float ray_angle, int col_id){
     if(!rc) return;
 
     int dof = 0, dof_max = 24;
-    ray_angle = rc_normalize_angle(ray_angle);
+    rc_normalize_angle(&ray_angle);
 
     float tan_a = tan(ray_angle); // Tangent of Ray Angle
 
@@ -173,26 +174,34 @@ void rc_cast_all_rays(raycaster_t *rc){
     }
 }
 
-float rc_normalize_angle(float angle){
-    angle = fmod(angle, TWO_PI);
-    if(angle < 0) angle += TWO_PI;
-    return angle;
+void rc_normalize_angle(float *angle){
+    *angle = fmod(*angle, TWO_PI);
+    if(*angle < 0) *angle += TWO_PI;
+}
+
+float rc_vec_mag(float x0, float y0, float x1, float y1){
+    return sqrt((x1 - x0) * (x1 - x0) + (y1 - y0) * (y1 - y0));
 }
 
 void rc_clean_up(raycaster_t *rc){  
     if(!rc) return;
-
+    if(rc->textures){
+        free_textures(rc->textures);
+        rc->textures = NULL;
+    }
+    if(rc->sprites){
+        free(rc->sprites);
+        rc->sprites = NULL;
+    }
     if(rc->board){
         rc_clean_board(rc->board);
         free(rc->board);
         rc->board = NULL;
     }
-
     if(rc->player){
         free(rc->player);
         rc->player = NULL;
     }
-
     if(rc->rays){
         free(rc->rays);
         rc->rays = NULL;

@@ -7,7 +7,7 @@ TARGET = RayCaster
 
 INCLUDES = -Iinclude -Iinclude/raycaster -Ilib/SDL3/include
 LIBS = -Llib/SDL3/lib
-CFLAGS = -std=c99 -Wall
+CFLAGS = -g -std=c99 -Wall
 LDFLAGS = -lSDL3
 
 SRC := $(wildcard $(SRC_DIR)/*.c) $(wildcard $(SRC_DIR)/*/*.c)

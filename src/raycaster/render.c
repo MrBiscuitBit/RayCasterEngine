@@ -119,3 +119,12 @@ void render_color_buffer(){
     SDL_RenderTexture(renderer, sdl_buffer.color_buffer_texture, NULL, NULL);
     SDL_RenderPresent(renderer);
 }
+
+void rc_change_color_intensity(u32 *color, float factor){
+    u32 a = (*color & 0xFF000000);
+    u32 b = (*color & 0x00FF0000) * factor;
+    u32 g = (*color & 0x0000FF00) * factor;
+    u32 r = (*color & 0x000000FF) * factor;
+
+    *color = a | (b & 0x00FF0000) | (g & 0x0000FF00) | (r & 0x000000FF);
+}

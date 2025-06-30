@@ -33,6 +33,7 @@ void rc_move_player(rc_player_t *player, rc_board_t *board, float delta_time){
 
     int turn_dir = player->turn_right + player->turn_left;
     player->angle += turn_dir * player->turn_speed * delta_time;
+    rc_normalize_angle(&player->angle);
 
     int walk_dir = player->walk_forward + player->walk_backward;
     float move_step = walk_dir * player->walk_speed * delta_time;
@@ -49,4 +50,23 @@ void rc_move_player(rc_player_t *player, rc_board_t *board, float delta_time){
     player->turn_right = 0;
     player->walk_forward = 0;
     player->walk_backward = 0;
+}
+
+void rc_render_map_player(rc_player_t *player, float scale_factor){
+    float player_x = player->pos.x - (player->width * 0.5f);
+    float player_y = player->pos.y - (player->height * 0.5f);
+
+    render_rect(
+        player_x * scale_factor,
+        player_y * scale_factor,
+        player->width * scale_factor,
+        player->height * scale_factor,
+        0xFF00FFFF);
+    render_line(
+        player->pos.x * scale_factor, 
+        player->pos.y * scale_factor,
+        player->pos.x * scale_factor + cos(player->angle) * 50 * scale_factor, 
+        player->pos.y * scale_factor + sin(player->angle) * 50 * scale_factor,
+        0xFF00FFFF
+    );
 }
